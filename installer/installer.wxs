@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="Planejamento de Voo VFR"
+           Manufacturer="Diego Gomes Araújo"
+           Version="1.1.0"
+           UpgradeCode="A7F3C2E1-9B4D-4E6A-8C15-2F9D7B3E4A11"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais recente do Planejamento de Voo VFR já está instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Ícone mostrado em Programas e Recursos e nos atalhos -->
+    <Icon Id="AppIcon" SourceFile="..\PlanejamentoVooVisual\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/" />
+
+    <!-- Pastas de destino -->
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="Planejamento de Voo VFR" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppMenuFolder" Name="Planejamento de Voo VFR" />
+    </StandardDirectory>
+
+    <!-- Todos os arquivos publicados (self-contained) -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="..\artifacts\publish\**" />
+    </ComponentGroup>
+
+    <!-- Atalho no Menu Iniciar -->
+    <Component Id="AtalhoMenu" Directory="AppMenuFolder">
+      <Shortcut Id="AtalhoMenuIniciar"
+                Name="Planejamento de Voo VFR"
+                Description="Planejamento de navegação VFR (navlog)"
+                Target="[INSTALLFOLDER]PlanejamentoVooVisual.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+      <RemoveFolder Id="RemoveAppMenuFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\PlanejamentoVooVisual"
+                     Name="menu" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Atalho na Área de Trabalho -->
+    <Component Id="AtalhoDesktop" Directory="DesktopFolder">
+      <Shortcut Id="AtalhoAreaTrabalho"
+                Name="Planejamento de Voo VFR"
+                Description="Planejamento de navegação VFR (navlog)"
+                Target="[INSTALLFOLDER]PlanejamentoVooVisual.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+      <RegistryValue Root="HKCU" Key="Software\PlanejamentoVooVisual"
+                     Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <Feature Id="Principal" Title="Planejamento de Voo VFR" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="AtalhoMenu" />
+      <ComponentRef Id="AtalhoDesktop" />
+    </Feature>
+
+    <!-- Interface do instalador com escolha de pasta -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+
+  </Package>
+</Wix>

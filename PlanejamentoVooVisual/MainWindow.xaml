@@ -1,0 +1,437 @@
+<Window x:Class="PlanejamentoVooVisual.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PlanejamentoVooVisual"
+        xmlns:vm="clr-namespace:PlanejamentoVooVisual.ViewModels"
+        xmlns:core="clr-namespace:PlanejamentoVooVisual.Core;assembly=PlanejamentoVooVisual.Core"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        mc:Ignorable="d"
+        Title="{Binding Titulo}" Height="1240" Width="1630"
+        Icon="app.ico"
+        WindowStartupLocation="CenterScreen"
+        Background="#F3F4F6"
+        FontFamily="Segoe UI" FontSize="12.5">
+
+    <Window.Resources>
+        <local:NullableDoubleConverter x:Key="Num" Formato="0.##"/>
+        <local:MinutosParaHoraConverter x:Key="HoraMin"/>
+        <local:FracaoParaPercentualConverter x:Key="Perc"/>
+        <local:BoolParaVisibilidadeConverter x:Key="BoolVis"/>
+
+        <ObjectDataProvider x:Key="Regras" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="core:RegrasVoo"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <!-- Cores base -->
+        <SolidColorBrush x:Key="Painel" Color="White"/>
+        <SolidColorBrush x:Key="Borda" Color="#D1D5DB"/>
+        <SolidColorBrush x:Key="Titulo" Color="#1E3A5F"/>
+
+        <Style x:Key="RotuloPainel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource Titulo}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,10,0,4"/>
+        </Style>
+
+        <Style x:Key="RotuloCampo" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#4B5563"/>
+            <Setter Property="Margin" Value="0,3,6,1"/>
+        </Style>
+
+        <Style x:Key="CampoTexto" TargetType="TextBox">
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Margin" Value="0,1,0,3"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Borda}"/>
+        </Style>
+
+        <Style x:Key="BotaoBarra" TargetType="Button">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Borda}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Cabeçalho da grade -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1E3A5F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="6,5"/>
+            <Setter Property="BorderBrush" Value="#274B78"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        </Style>
+
+        <!-- Célula calculada: somente leitura, visualmente distinta -->
+        <Style x:Key="CelCalculada" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Barra de ferramentas -->
+        <Border DockPanel.Dock="Top" Background="White" BorderBrush="{StaticResource Borda}" BorderThickness="0,0,0,1" Padding="10,8">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding NovoCommand}" Content="Novo"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding AbrirCommand}" Content="Abrir…"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding SalvarCommand}" Content="Salvar"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding SalvarComoCommand}" Content="Salvar como…"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding ExportarCsvCommand}" Content="Exportar CSV…"/>
+                <Button Command="{Binding ExportarIvaoCommand}" Content="✈ Exportar para IVAO"
+                        Padding="10,5" Margin="0,0,6,0" Cursor="Hand" Foreground="White"
+                        Background="#0E7C86" BorderBrush="#0B646C"
+                        ToolTip="Abre o formulário de plano de voo da IVAO já preenchido (e copia o link)."/>
+                <Separator Margin="6,0" Background="{StaticResource Borda}"/>
+                <ToggleButton x:Name="TogglePainel" IsChecked="True" Content="☰ Parâmetros"
+                              Padding="10,5" Background="White" BorderBrush="{StaticResource Borda}" Cursor="Hand"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Resumo fixo embaixo -->
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="{StaticResource Borda}" BorderThickness="0,1,0,0" Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Totais -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Margin="0,0,22,0">
+                        <TextBlock Text="Distância total" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource Titulo}">
+                            <Run Text="{Binding TotalDistanciaNm, StringFormat=N1, Mode=OneWay}"/><Run Text=" NM"/>
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,22,0">
+                        <TextBlock Text="Tempo total" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource Titulo}"
+                                   Text="{Binding TotalTempoMin, Converter={StaticResource HoraMin}, Mode=OneWay}"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,22,0">
+                        <TextBlock Text="Combustível rota" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource Titulo}">
+                            <Run Text="{Binding TotalCombustivelKg, StringFormat=N2, Mode=OneWay}"/><Run Text=" kg"/>
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,22,0">
+                        <TextBlock Text="GS média" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock FontSize="20" FontWeight="Bold" Foreground="{StaticResource Titulo}">
+                            <Run Text="{Binding GsMediaKt, StringFormat=N1, Mode=OneWay}"/><Run Text=" kt"/>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Quebra por fase -->
+                <Border Grid.Column="1" Margin="16,0" Padding="12,4" Background="#F8FAFC" BorderBrush="{StaticResource Borda}" BorderThickness="1" CornerRadius="4" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="Por fase (NM · tempo · kg)" Style="{StaticResource RotuloCampo}"/>
+                        <UniformGrid Columns="3">
+                            <TextBlock Margin="0,1"><Run Text="Subida: " FontWeight="SemiBold"/><Run Text="{Binding FaseSubida.DistanciaNm, StringFormat=N0, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding FaseSubida.TempoMin, StringFormat=N1, Mode=OneWay}"/><Run Text="′ · "/><Run Text="{Binding FaseSubida.CombustivelKg, StringFormat=N2, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Margin="10,1"><Run Text="Cruzeiro: " FontWeight="SemiBold"/><Run Text="{Binding FaseCruzeiro.DistanciaNm, StringFormat=N0, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding FaseCruzeiro.TempoMin, StringFormat=N1, Mode=OneWay}"/><Run Text="′ · "/><Run Text="{Binding FaseCruzeiro.CombustivelKg, StringFormat=N2, Mode=OneWay}"/></TextBlock>
+                            <TextBlock Margin="10,1"><Run Text="Descida: " FontWeight="SemiBold"/><Run Text="{Binding FaseDescida.DistanciaNm, StringFormat=N0, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding FaseDescida.TempoMin, StringFormat=N1, Mode=OneWay}"/><Run Text="′ · "/><Run Text="{Binding FaseDescida.CombustivelKg, StringFormat=N2, Mode=OneWay}"/></TextBlock>
+                        </UniformGrid>
+
+                        <Border Height="1" Background="{StaticResource Borda}" Margin="0,6,0,4"/>
+                        <TextBlock Visibility="{Binding TemToc, Converter={StaticResource BoolVis}}" Margin="0,1">
+                            <Run Text="▲ TOC (topo de subida): entre " FontWeight="SemiBold" Foreground="#0E7C86"/><Run Text="{Binding Toc.EntreDe, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" e "/><Run Text="{Binding Toc.EntrePara, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Toc.DistanciaAcumuladaNm, StringFormat=N1, Mode=OneWay}"/><Run Text=" NM · "/><Run Text="{Binding Toc.TempoAcumuladoMin, Converter={StaticResource HoraMin}, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Toc.AltitudeFt, StringFormat=N0, Mode=OneWay}"/><Run Text=" ft"/>
+                        </TextBlock>
+                        <TextBlock Visibility="{Binding TemTod, Converter={StaticResource BoolVis}}" Margin="0,1">
+                            <Run Text="▼ TOD (início de descida): entre " FontWeight="SemiBold" Foreground="#B45309"/><Run Text="{Binding Tod.EntreDe, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" e "/><Run Text="{Binding Tod.EntrePara, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Tod.DistanciaAcumuladaNm, StringFormat=N1, Mode=OneWay}"/><Run Text=" NM · "/><Run Text="{Binding Tod.TempoAcumuladoMin, Converter={StaticResource HoraMin}, Mode=OneWay}"/><Run Text=" · faltam "/><Run Text="{Binding Tod.DistanciaRestanteNm, StringFormat=N1, Mode=OneWay}"/><Run Text=" NM p/ destino"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Bloco de combustível -->
+                <Border Grid.Column="2" Padding="12,6" Background="#F8FAFC" BorderBrush="{StaticResource Borda}" BorderThickness="1" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="Combustível mínimo a bordo (kg)" Style="{StaticResource RotuloCampo}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition/><RowDefinition/><RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Partida/táxi"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Text="{Binding CombPartidaTaxiKg, StringFormat=N2, Mode=OneWay}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Rota"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" Text="{Binding CombRotaKg, StringFormat=N2, Mode=OneWay}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Contingência"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Text="{Binding CombContingenciaKg, StringFormat=N2, Mode=OneWay}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Margin="14,0,0,0" Text="Alternativa"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" HorizontalAlignment="Right" Text="{Binding CombAlternativaKg, StringFormat=N2, Mode=OneWay}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Margin="14,0,0,0" Text="Reserva"/>
+                            <TextBlock Grid.Row="1" Grid.Column="3" HorizontalAlignment="Right" Text="{Binding CombReservaKg, StringFormat=N2, Mode=OneWay}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="2" Margin="14,0,0,0" Text="Autonomia" Foreground="#6B7280"/>
+                            <TextBlock Grid.Row="2" Grid.Column="3" HorizontalAlignment="Right" Foreground="#6B7280" Text="{Binding AutonomiaHoras, StringFormat=N1, Mode=OneWay}"/>
+                        </Grid>
+                        <Border Background="#1E3A5F" CornerRadius="4" Padding="10,5" Margin="0,6,0,0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="TOTAL A BORDO" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock HorizontalAlignment="Right" Foreground="White" FontWeight="Bold" FontSize="17">
+                                    <Run Text="{Binding CombTotalKg, StringFormat=N2, Mode=OneWay}"/><Run Text=" kg"/>
+                                </TextBlock>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Painel de parâmetros (recolhível) -->
+        <Border DockPanel.Dock="Left" Width="290" Background="{StaticResource Painel}"
+                BorderBrush="{StaticResource Borda}" BorderThickness="0,0,1,0"
+                Visibility="{Binding IsChecked, ElementName=TogglePainel, Converter={StaticResource BoolVis}}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12,4,12,12">
+                <StackPanel>
+                    <TextBlock Text="Dados gerais" Style="{StaticResource RotuloPainel}"/>
+                    <TextBlock Text="Aeronave" Style="{StaticResource RotuloCampo}"/>
+                    <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Aeronave, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Text="Data" Style="{StaticResource RotuloCampo}"/>
+                    <DatePicker SelectedDate="{Binding Plano.Data}" Margin="0,1,0,3"/>
+                    <TextBlock Text="Piloto" Style="{StaticResource RotuloCampo}"/>
+                    <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Piloto, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Origem e destino" Style="{StaticResource RotuloPainel}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Nome" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Alt (ft)" Style="{StaticResource RotuloCampo}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Origem" VerticalAlignment="Center" Margin="0,0,6,3" FontWeight="SemiBold" Foreground="#4B5563"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource CampoTexto}" Margin="0,1,4,3" Text="{Binding Plano.OrigemNome, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Row="1" Grid.Column="2" Style="{StaticResource CampoTexto}" Text="{Binding Plano.ElevacaoPartidaFt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Destino" VerticalAlignment="Center" Margin="0,0,6,3" FontWeight="SemiBold" Foreground="#4B5563"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource CampoTexto}" Margin="0,1,4,3" Text="{Binding Plano.DestinoNome, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Row="2" Grid.Column="2" Style="{StaticResource CampoTexto}" Text="{Binding Plano.ElevacaoDestinoFt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+
+                    <TextBlock Text="Perfil vertical" Style="{StaticResource RotuloPainel}"/>
+                    <TextBlock Text="Altitude de cruzeiro (ft)" Style="{StaticResource RotuloCampo}"/>
+                    <TextBox Style="{StaticResource CampoTexto}" Width="90" HorizontalAlignment="Left"
+                             Text="{Binding Plano.AltitudeCruzeiroFt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Foreground="#6B7280" TextWrapping="Wrap" FontSize="11" Margin="0,2,0,0"
+                               Text="As altitudes e fases da tabela são calculadas pela origem/cruzeiro/destino e pelas razões de subida/descida. O app acha o TOC e o TOD sozinho."/>
+
+                    <TextBlock Text="Plano de voo (IVAO)" Style="{StaticResource RotuloPainel}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock Text="Tipo ICAO (ex.: C172)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.AeronaveIcaoTipo, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="EOBT (UTC, HH:MM)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.EobtUtc, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <TextBlock Text="Regras" Style="{StaticResource RotuloCampo}"/>
+                            <ComboBox Margin="0,1,0,3" SelectedItem="{Binding Plano.Regras}"
+                                      ItemsSource="{Binding Source={StaticResource Regras}}"/>
+                            <TextBlock Text="Pessoas a bordo" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.PessoasABordo, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Foreground="#6B7280" TextWrapping="Wrap" FontSize="11" Margin="0,2,0,0"
+                               Text="Partida/destino e rota saem dos waypoints; velocidade, nível e tempo do cálculo. Use ✈ Exportar para IVAO."/>
+
+                    <TextBlock Text="Perfis por fase" Style="{StaticResource RotuloPainel}"/>
+                    <DataGrid ItemsSource="{Binding Plano.Perfis}" AutoGenerateColumns="False"
+                              HeadersVisibility="Column" CanUserAddRows="False" CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal" BorderBrush="{StaticResource Borda}" BorderThickness="1"
+                              RowBackground="White" AlternatingRowBackground="#F8FAFC">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Fase" Binding="{Binding Fase}" IsReadOnly="True" Width="*"/>
+                            <DataGridTextColumn Header="IAS" Binding="{Binding IasKt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" Width="48"/>
+                            <DataGridTextColumn Header="kg/h" Binding="{Binding ConsumoKgH, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" Width="48"/>
+                            <DataGridTextColumn Header="ft/min" Binding="{Binding RazaoTipicaFtMin, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Text="Vento e temperatura" Style="{StaticResource RotuloPainel}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock Text="Vento dir (°M)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Atmosfera.VentoDirGrausMag, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Alt ref (ft)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Atmosfera.AltRefFt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Gradiente (°C/1000ft)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Atmosfera.GradienteCPor1000Ft, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <TextBlock Text="Vento vel (kt)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Atmosfera.VentoVelKt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="OAT ref (°C)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Atmosfera.OatRefC, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Combustível adicional" Style="{StaticResource RotuloPainel}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                            <TextBlock Text="Partida/táxi (kg)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Combustivel.PartidaTaxiKg, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Contingência (%)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Combustivel.ContingenciaPercentual, Converter={StaticResource Perc}, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <TextBlock Text="Reserva (min)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Combustivel.ReservaMin, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Alternativa (min)" Style="{StaticResource RotuloCampo}"/>
+                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Combustivel.AlternativaMin, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Área central: rota editável + navlog calculado -->
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" MinHeight="120"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding AdicionarPernaCommand}" Content="＋ Adicionar"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding DuplicarPernaCommand}" Content="⧉ Duplicar"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding RemoverPernaCommand}" Content="✕ Remover"/>
+                <Separator Margin="6,0" Background="{StaticResource Borda}"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding SubirPernaCommand}" Content="▲ Subir"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding DescerPernaCommand}" Content="▼ Descer"/>
+                <Separator Margin="6,0" Background="{StaticResource Borda}"/>
+                <Button Style="{StaticResource BotaoBarra}" Command="{Binding ReverterOverridesCommand}" Content="↺ Reverter overrides da perna"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Text="Rota (pernas) — informe cada 'Para' (para onde vai) e os dados para chegar. A origem é o ponto de partida; o último 'Para' é o destino. Alt* fixa uma altitude a partir da perna; fase e demais altitudes são calculadas."
+                       Foreground="{StaticResource Titulo}" FontWeight="SemiBold" Margin="2,0,0,4" TextWrapping="Wrap"/>
+
+            <!-- Grade de ROTA (editável) -->
+            <DataGrid Grid.Row="2" ItemsSource="{Binding Pernas}" SelectedItem="{Binding Selecionada}"
+                      AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                      HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"
+                      GridLinesVisibility="All" BorderBrush="{StaticResource Borda}" BorderThickness="1"
+                      RowBackground="White" AlternatingRowBackground="#F8FAFC"
+                      ColumnHeaderHeight="30" RowHeight="26"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nº" Binding="{Binding Ordem, Mode=OneWay}" IsReadOnly="True" Width="34"/>
+                    <DataGridTextColumn Header="Para (waypoint)" Binding="{Binding Para, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                    <DataGridTextColumn Header="Dist (NM)" Binding="{Binding DistanciaNm, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+                    <DataGridTextColumn Header="Curso Mag" Binding="{Binding CursoMag, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" Width="75"/>
+                    <DataGridTextColumn Header="Alt* (ft)" Binding="{Binding AltitudeOverrideFt, Converter={StaticResource Num}, ConverterCulture=pt-BR, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+                    <DataGridTextColumn Header="OAT*" Binding="{Binding OatCOverride, Converter={StaticResource Num}, ConverterCulture=pt-BR, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="IAS*" Binding="{Binding IasKtOverride, Converter={StaticResource Num}, ConverterCulture=pt-BR, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="V.dir*" Binding="{Binding VentoDirOverride, Converter={StaticResource Num}, ConverterCulture=pt-BR, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="V.vel*" Binding="{Binding VentoVelOverride, Converter={StaticResource Num}, ConverterCulture=pt-BR, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Consumo*" Binding="{Binding ConsumoKgHOverride, Converter={StaticResource Num}, ConverterCulture=pt-BR, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Grid.Row="3" Text="Navlog calculado — segmentos com TOC/TOD inseridos (não editável)"
+                       Foreground="{StaticResource Titulo}" FontWeight="SemiBold" Margin="2,8,0,4"/>
+
+            <DataGrid Grid.Row="4" ItemsSource="{Binding Segmentos}"
+                      AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"
+                      HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"
+                      GridLinesVisibility="All" BorderBrush="{StaticResource Borda}" BorderThickness="1"
+                      RowBackground="White" AlternatingRowBackground="#F8FAFC"
+                      ColumnHeaderHeight="34" RowHeight="26"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Style.Triggers>
+                            <!-- Linha do TOC/TOD destacada -->
+                            <DataTrigger Binding="{Binding EhPontoNotavel}" Value="True">
+                                <Setter Property="Background" Value="#E6F4F5"/>
+                            </DataTrigger>
+                            <!-- Segmento insolúvel em vermelho -->
+                            <DataTrigger Binding="{Binding Resolvida}" Value="False">
+                                <Setter Property="Background" Value="#FDE2E2"/>
+                                <Setter Property="ToolTip" Value="{Binding Motivo}"/>
+                            </DataTrigger>
+                            <!-- Trecho já cumprido: verde e texto esmaecido -->
+                            <DataTrigger Binding="{Binding Cumprido}" Value="True">
+                                <Setter Property="Background" Value="#BBE9C4"/>
+                                <Setter Property="Foreground" Value="#3F6046"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="✓" Width="32" CanUserResize="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Cumprido, UpdateSourceTrigger=PropertyChanged}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          ToolTip="Marcar que já passei por este trecho"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Nº" Binding="{Binding Ordem}" Width="34"/>
+                    <DataGridTextColumn Header="De" Binding="{Binding De}" Width="72" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="Para" Binding="{Binding Para}" Width="72" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="Fase" Binding="{Binding Fase}" Width="72"/>
+                    <DataGridTextColumn Header="Dist" Binding="{Binding DistanciaNm, StringFormat=N1}" Width="50"/>
+                    <DataGridTextColumn Header="Curso" Binding="{Binding CursoMag, StringFormat=N0}" Width="50"/>
+                    <DataGridTextColumn Header="Alt ini" Binding="{Binding AltInicialFt, StringFormat=N0}" Width="56" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="Alt méd" Binding="{Binding AltMediaFt, StringFormat=N0}" Width="56" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="Alt fim" Binding="{Binding AltFinalFt, StringFormat=N0}" Width="56" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="OAT" Binding="{Binding OatC, StringFormat=N1}" Width="50" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="IAS" Binding="{Binding IasKt, StringFormat=N0}" Width="46" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="V.dir" Binding="{Binding VentoDirGrausMag, StringFormat=N0}" Width="46" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="V.vel" Binding="{Binding VentoVelKt, StringFormat=N0}" Width="46" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="TAS" Binding="{Binding TasKt, StringFormat=N1}" Width="54" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="WCA" Binding="{Binding WcaGraus, StringFormat=N1}" Width="50" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="Proa" Binding="{Binding ProaMag, StringFormat=N1}" Width="52" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="GS" Binding="{Binding GsKt, StringFormat=N1}" Width="54" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="Tempo" Binding="{Binding TempoMin, Converter={StaticResource HoraMin}}" Width="56" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="Razão" Binding="{Binding RazaoExigidaFtMin, StringFormat=N0}" Width="56">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelCalculada}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RazaoAcimaDoTipico}" Value="True">
+                                        <Setter Property="Foreground" Value="#DC2626"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="ToolTip" Value="Razão exigida acima da razão típica da fase."/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Consumo" Binding="{Binding ConsumoKgH, StringFormat=N0}" Width="58" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="Comb" Binding="{Binding CombustivelKg, StringFormat=N2}" Width="54" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="T.acum" Binding="{Binding TempoAcumuladoMin, Converter={StaticResource HoraMin}}" Width="58" ElementStyle="{StaticResource CelCalculada}"/>
+                    <DataGridTextColumn Header="C.acum" Binding="{Binding CombustivelAcumuladoKg, StringFormat=N2}" Width="56" ElementStyle="{StaticResource CelCalculada}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Grid.Row="5" Margin="2,6,0,0" Foreground="#6B7280" TextWrapping="Wrap"
+                       Text="TOC e TOD entram como waypoints (linhas em azul-claro), dividindo a perna onde caem. Razão em vermelho excede a típica da fase; segmentos insolúveis ficam em vermelho e fora dos totais. Os campos com * na rota são overrides opcionais (em branco = herdam do bloco global)."/>
+        </Grid>
+    </DockPanel>
+</Window>

@@ -1,0 +1,30 @@
+# Saídas de build
+[Bb]in/
+[Oo]bj/
+artifacts/
+
+# .NET / MSBuild
+*.user
+*.suo
+*.userprefs
+project.lock.json
+*.binlog
+
+# Resultados de teste
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coverwarnings
+
+# IDEs
+.vs/
+.idea/
+*.DotSettings.user
+
+# Ferramenta Claude Code (estado/memória local)
+.claude/
+
+# Sistema operacional
+Thumbs.db
+Desktop.ini
+.DS_Store
