@@ -126,16 +126,83 @@ public class FormulasNavegacaoTests
     }
 
     [Fact]
-    public void Combustivel_AlternativaEReservaUsamConsumoDeCruzeiro()
+    public void Combustivel_ReservaUsaConsumoDeCruzeiro()
     {
         var plano = Nivelado(3000, 100, consumo: 20);
-        plano.Combustivel.AlternativaMin = 60;
         plano.Combustivel.ReservaMin = 30;
         plano.Pernas.Add(new Perna { Para = "Y", DistanciaNm = 20, CursoMag = 0 });
 
         var c = CalculadoraNavegacao.Calcular(plano).Combustivel;
 
-        Assert.Equal(20, c.AlternativaKg, Tol); // 60 min × 20 kg/h
-        Assert.Equal(10, c.ReservaKg, Tol);     // 30 min × 20 kg/h
+        Assert.Equal(10, c.ReservaKg, Tol); // 30 min × 20 kg/h
+    }
+
+    [Fact]
+    public void Alternado_ComMesmaDistanciaECurso_ConsomeIgualAUmaPernaDeCruzeiro()
+    {
+        // Um alternado idêntico a uma perna de cruzeiro (mesma distância e curso, mesmo
+        // nível) deve consumir exatamente o mesmo combustível — prova que a perna do
+        // alternado é calculada pela mesma lógica, e não por minutos fixos.
+        var plano = Nivelado(5500, ias: 110, consumo: 22);
+        plano.DestinoNome = "DEST";
+        plano.Pernas.Add(new Perna { Para = "C", DistanciaNm = 30, CursoMag = 274 });
+        plano.AlternadoNome = "ALT";
+        plano.AlternadoDistanciaNm = 30;
+        plano.AlternadoCursoMag = 274;
+
+        var r = CalculadoraNavegacao.Calcular(plano);
+
+        Assert.NotNull(r.Alternado);
+        Assert.Equal("DEST", r.Alternado!.De);
+        Assert.Equal("ALT", r.Alternado.Para);
+        Assert.Equal(Fase.Cruzeiro, r.Alternado.Fase);
+        Assert.Equal(r.Pernas[0].CombustivelKg!.Value, r.Alternado.CombustivelKg!.Value, Tol);
+        Assert.Equal(r.Alternado.CombustivelKg!.Value, r.Combustivel.AlternativaKg, Tol);
+    }
+
+    [Fact]
+    public void Alternado_SemDistancia_NaoConsomeCombustivel()
+    {
+        var plano = Nivelado(3000, ias: 100, consumo: 20);
+        plano.Pernas.Add(new Perna { Para = "Y", DistanciaNm = 20, CursoMag = 0 });
+        // AlternadoDistanciaNm permanece 0 (padrão).
+
+        var r = CalculadoraNavegacao.Calcular(plano);
+
+        Assert.Null(r.Alternado);
+        Assert.Equal(0, r.Combustivel.AlternativaKg, Tol);
+    }
+
+    [Fact]
+    public void Alternado_Insoluvel_DaZeroSemLancar()
+    {
+        // Vento de proa muito maior que a TAS torna a perna do alternado insolúvel;
+        // o combustível do alternado deve ser 0, sem exceção.
+        var plano = Nivelado(3000, ias: 60, consumo: 20, ventoDir: 0, ventoVel: 200);
+        plano.Pernas.Add(new Perna { Para = "Z", DistanciaNm = 20, CursoMag = 90 });
+        plano.AlternadoDistanciaNm = 15;
+        plano.AlternadoCursoMag = 0; // vento de proa vindo de 0°/200 kt >> TAS
+
+        var c = CalculadoraNavegacao.Calcular(plano).Combustivel;
+
+        Assert.Equal(0, c.AlternativaKg, Tol);
+    }
+
+    [Fact]
+    public void Alternado_MaisLonge_ConsomeMais()
+    {
+        PlanoDeVoo ComAlternado(double dist)
+        {
+            var p = Nivelado(4000, ias: 110, consumo: 22);
+            p.Pernas.Add(new Perna { Para = "Z", DistanciaNm = 20, CursoMag = 90 });
+            p.AlternadoDistanciaNm = dist;
+            p.AlternadoCursoMag = 90;
+            return p;
+        }
+
+        double perto = CalculadoraNavegacao.Calcular(ComAlternado(10)).Combustivel.AlternativaKg;
+        double longe = CalculadoraNavegacao.Calcular(ComAlternado(40)).Combustivel.AlternativaKg;
+
+        Assert.True(longe > perto, $"esperado {longe} > {perto}");
     }
 }

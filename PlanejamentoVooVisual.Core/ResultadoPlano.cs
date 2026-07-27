@@ -80,4 +80,7 @@ public sealed class ResultadoPlano
 
     /// <summary>Início de descida (começo da primeira perna de descida); null se não há descida.</summary>
     public PontoNotavel? Tod { get; init; }
+
+    /// <summary>Perna calculada do destino ao alternado (cruzeiro); null se não há alternado.</summary>
+    public ResultadoPerna? Alternado { get; init; }
 }

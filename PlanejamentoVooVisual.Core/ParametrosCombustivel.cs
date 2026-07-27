@@ -6,7 +6,6 @@ public sealed class ParametrosCombustivel : ObservableObject
     private double _partidaTaxiKg;
     private double _reservaMin;
     private double _contingenciaPercentual;
-    private double _alternativaMin;
 
     /// <summary>Combustível de partida e táxi, em kg.</summary>
     public double PartidaTaxiKg
@@ -27,12 +26,5 @@ public sealed class ParametrosCombustivel : ObservableObject
     {
         get => _contingenciaPercentual;
         set => SetProperty(ref _contingenciaPercentual, value);
-    }
-
-    /// <summary>Combustível para a alternativa, em minutos.</summary>
-    public double AlternativaMin
-    {
-        get => _alternativaMin;
-        set => SetProperty(ref _alternativaMin, value);
     }
 }

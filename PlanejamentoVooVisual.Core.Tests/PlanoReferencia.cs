@@ -32,8 +32,7 @@ internal static class PlanoReferencia
             {
                 PartidaTaxiKg = 3,
                 ReservaMin = 45,
-                ContingenciaPercentual = 0.05,
-                AlternativaMin = 0
+                ContingenciaPercentual = 0.05
             }
         };
 

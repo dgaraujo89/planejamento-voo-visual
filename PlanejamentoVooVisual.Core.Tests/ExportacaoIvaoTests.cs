@@ -110,4 +110,23 @@ public class ExportacaoIvaoTests
         var (_, fp) = Gerar(p => p.EobtUtc = "");
         Assert.False(fp.TryGetProperty("departureTime", out _));
     }
+
+    [Fact]
+    public void AlternativeId_SaiDoNomeDoAlternado()
+    {
+        var (_, fp) = Gerar(p =>
+        {
+            p.AlternadoNome = "SBXX";
+            p.AlternadoDistanciaNm = 15;
+            p.AlternadoCursoMag = 90;
+        });
+        Assert.Equal("SBXX", fp.GetProperty("alternativeId").GetString());
+    }
+
+    [Fact]
+    public void AlternativeId_AusenteQuandoSemAlternado()
+    {
+        var (_, fp) = Gerar(); // fixture de referência não tem alternado
+        Assert.False(fp.TryGetProperty("alternativeId", out _));
+    }
 }

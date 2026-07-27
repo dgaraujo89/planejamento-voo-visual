@@ -133,6 +133,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public double CombTotalKg => _resultado?.Combustivel.TotalKg ?? 0;
     public double AutonomiaHoras => _resultado?.Combustivel.AutonomiaHoras ?? 0;
 
+    /// <summary>Há um alternado calculado (distância informada) para exibir?</summary>
+    public bool TemAlternado => _resultado?.Alternado is not null;
+
+    /// <summary>Resumo da perna do alternado: "SBAX: 22 NM · 12 min · 7,3 kg".</summary>
+    public string AlternadoResumo
+    {
+        get
+        {
+            var a = _resultado?.Alternado;
+            if (a is null) return string.Empty;
+
+            var pt = System.Globalization.CultureInfo.GetCultureInfo("pt-BR");
+            string nome = string.IsNullOrWhiteSpace(a.Para) ? "Alternado" : a.Para;
+            if (!a.Resolvida)
+                return $"{nome}: trecho insolúvel";
+            return string.Format(pt, "{0}: {1:0} NM · {2:0} min · {3:0.0} kg",
+                nome, a.DistanciaNm, a.TempoMin, a.CombustivelKg);
+        }
+    }
+
     /// <summary>Substitui o plano atual (Novo/Abrir) e recalcula.</summary>
     public void CarregarPlano(PlanoDeVoo plano)
     {
@@ -306,7 +326,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             nameof(FaseSubida), nameof(FaseCruzeiro), nameof(FaseDescida),
             nameof(Toc), nameof(Tod), nameof(TemToc), nameof(TemTod),
             nameof(CombPartidaTaxiKg), nameof(CombRotaKg), nameof(CombContingenciaKg),
-            nameof(CombAlternativaKg), nameof(CombReservaKg), nameof(CombTotalKg), nameof(AutonomiaHoras)
+            nameof(CombAlternativaKg), nameof(CombReservaKg), nameof(CombTotalKg), nameof(AutonomiaHoras),
+            nameof(TemAlternado), nameof(AlternadoResumo)
         })
             OnPropertyChanged(nome);
     }
@@ -327,13 +348,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             ElevacaoPartidaFt = 2400,
             AltitudeCruzeiroFt = 5500,
             ElevacaoDestinoFt = 2200,
+            AlternadoNome = "SBAX",
+            AlternadoDistanciaNm = 22,
+            AlternadoCursoMag = 300,
             Atmosfera = new CondicoesAtmosfera
             {
                 VentoDirGrausMag = 270, VentoVelKt = 15, AltRefFt = 2400, OatRefC = 22, GradienteCPor1000Ft = 1.98
             },
             Combustivel = new ParametrosCombustivel
             {
-                PartidaTaxiKg = 3, ReservaMin = 45, ContingenciaPercentual = 0.05, AlternativaMin = 0
+                PartidaTaxiKg = 3, ReservaMin = 45, ContingenciaPercentual = 0.05
             }
         };
         plano.Perfis.Add(new PerfilFase { Fase = Core.Fase.Subida, IasKt = 80, ConsumoKgH = 30, RazaoTipicaFtMin = 700 });

@@ -5,7 +5,7 @@ informa a rota e os parâmetros da aeronave, e o programa calcula o perfil verti
 proas, tempos, combustível e os pontos notáveis (TOC/TOD) — pronto para exportar
 para a IVAO ou salvar em disco.
 
-Versão atual: **1.1.0**
+Versão atual: **1.2.0**
 
 ---
 
@@ -24,6 +24,9 @@ Versão atual: **1.1.0**
   informa apenas o "Para" (waypoint de destino) e os dados para chegar até ele.
 - **Marcação de progresso**: um checkbox por linha do navlog para marcar por onde já
   passou — a linha muda de cor ao ser marcada.
+- **Aeródromo alternativo**: informe nome, distância (NM) e curso do destino ao
+  alternado; a perna é calculada em cruzeiro e o combustível entra no bloco
+  "Alternativa" (também preenche o `alternativeId` na exportação IVAO).
 - **Exportação para a IVAO**: abre o formulário oficial da IVAO
   (`fpl.ivao.aero`) já pré-preenchido, via URL com o plano em Base64.
 - **Persistência** em arquivo `.vfrplan` (JSON) e **exportação CSV** do navlog.

@@ -177,6 +177,10 @@
                             <TextBlock Grid.Row="2" Grid.Column="2" Margin="14,0,0,0" Text="Autonomia" Foreground="#6B7280"/>
                             <TextBlock Grid.Row="2" Grid.Column="3" HorizontalAlignment="Right" Foreground="#6B7280" Text="{Binding AutonomiaHoras, StringFormat=N1, Mode=OneWay}"/>
                         </Grid>
+                        <TextBlock Margin="0,4,0,0" Foreground="#6B7280" FontSize="11" TextWrapping="Wrap"
+                                   Visibility="{Binding TemAlternado, Converter={StaticResource BoolVis}}">
+                            <Run Text="Alternado →"/><Run Text=" "/><Run Text="{Binding AlternadoResumo, Mode=OneWay}"/>
+                        </TextBlock>
                         <Border Background="#1E3A5F" CornerRadius="4" Padding="10,5" Margin="0,6,0,0">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Left" Text="TOTAL A BORDO" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
@@ -225,6 +229,26 @@
                         <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource CampoTexto}" Margin="0,1,4,3" Text="{Binding Plano.DestinoNome, UpdateSourceTrigger=PropertyChanged}"/>
                         <TextBox Grid.Row="2" Grid.Column="2" Style="{StaticResource CampoTexto}" Text="{Binding Plano.ElevacaoDestinoFt, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
+
+                    <TextBlock Text="Alternado" Style="{StaticResource RotuloPainel}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Nome" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Dist (NM)" Style="{StaticResource RotuloCampo}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Curso (°)" Style="{StaticResource RotuloCampo}"/>
+                        <TextBox Grid.Row="1" Grid.Column="0" Style="{StaticResource CampoTexto}" Margin="0,1,4,3" Text="{Binding Plano.AlternadoNome, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource CampoTexto}" Margin="0,1,4,3" Text="{Binding Plano.AlternadoDistanciaNm, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Row="1" Grid.Column="2" Style="{StaticResource CampoTexto}" Text="{Binding Plano.AlternadoCursoMag, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+                    <TextBlock Foreground="#6B7280" TextWrapping="Wrap" FontSize="11" Margin="0,2,0,0"
+                               Text="A perna destino→alternado é voada em cruzeiro; o combustível entra no bloco 'Alternativa'. Deixe a distância em 0 se não houver alternado."/>
 
                     <TextBlock Text="Perfil vertical" Style="{StaticResource RotuloPainel}"/>
                     <TextBlock Text="Altitude de cruzeiro (ft)" Style="{StaticResource RotuloCampo}"/>
@@ -297,8 +321,9 @@
                         <StackPanel Grid.Column="1" Margin="6,0,0,0">
                             <TextBlock Text="Reserva (min)" Style="{StaticResource RotuloCampo}"/>
                             <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Combustivel.ReservaMin, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock Text="Alternativa (min)" Style="{StaticResource RotuloCampo}"/>
-                            <TextBox Style="{StaticResource CampoTexto}" Text="{Binding Plano.Combustivel.AlternativaMin, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Alternativa" Style="{StaticResource RotuloCampo}" Foreground="#6B7280"/>
+                            <TextBlock Foreground="#6B7280" FontSize="11" TextWrapping="Wrap" Margin="0,1,0,3"
+                                       Text="Calculada pela perna do alternado (seção Alternado)."/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>

@@ -36,6 +36,9 @@ public static class ExportacaoIvao
         if (plano.Pernas.Count > 0)
             fp["route"] = MontarRota(plano);
 
+        if (plano.AlternadoDistanciaNm > 0)
+            Adicionar(fp, "alternativeId", Codigo(plano.AlternadoNome));
+
         var eobt = ParseEobtSegundos(plano.EobtUtc);
         if (eobt.HasValue) fp["departureTime"] = eobt.Value;
 

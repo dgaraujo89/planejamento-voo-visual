@@ -20,6 +20,9 @@ public sealed class PlanoDeVoo : ObservableObject
     private double _elevacaoPartidaFt;
     private double _altitudeCruzeiroFt;
     private double _elevacaoDestinoFt;
+    private string _alternadoNome = string.Empty;
+    private double _alternadoDistanciaNm;
+    private double _alternadoCursoMag;
 
     /// <summary>Identificação da aeronave (callsign / matrícula).</summary>
     public string Aeronave
@@ -89,6 +92,27 @@ public sealed class PlanoDeVoo : ObservableObject
     {
         get => _elevacaoDestinoFt;
         set => SetProperty(ref _elevacaoDestinoFt, value);
+    }
+
+    /// <summary>Nome/ICAO do aeródromo alternativo (destino de desvio).</summary>
+    public string AlternadoNome
+    {
+        get => _alternadoNome;
+        set => SetProperty(ref _alternadoNome, value);
+    }
+
+    /// <summary>Distância do destino até o alternado, em NM. Zero = sem alternado.</summary>
+    public double AlternadoDistanciaNm
+    {
+        get => _alternadoDistanciaNm;
+        set => SetProperty(ref _alternadoDistanciaNm, value);
+    }
+
+    /// <summary>Curso magnético do destino até o alternado, em graus.</summary>
+    public double AlternadoCursoMag
+    {
+        get => _alternadoCursoMag;
+        set => SetProperty(ref _alternadoCursoMag, value);
     }
 
     /// <summary>Data do voo.</summary>

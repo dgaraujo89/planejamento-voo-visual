@@ -4,7 +4,7 @@
 
   <Package Name="Planejamento de Voo VFR"
            Manufacturer="Diego Gomes Araújo"
-           Version="1.1.0"
+           Version="1.2.0"
            UpgradeCode="A7F3C2E1-9B4D-4E6A-8C15-2F9D7B3E4A11"
            Scope="perMachine"
            Compressed="yes">

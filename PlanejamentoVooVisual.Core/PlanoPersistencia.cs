@@ -76,7 +76,10 @@ public static class PlanoPersistencia
         sb.AppendLine($"Partida/táxi;{c.PartidaTaxiKg.ToString("0.00", pt)}");
         sb.AppendLine($"Rota;{c.RotaKg.ToString("0.00", pt)}");
         sb.AppendLine($"Contingência;{c.ContingenciaKg.ToString("0.00", pt)}");
-        sb.AppendLine($"Alternativa;{c.AlternativaKg.ToString("0.00", pt)}");
+        if (resultado.Alternado is { Resolvida: true } alt)
+            sb.AppendLine($"Alternativa ({Escapar(alt.Para)}, {alt.DistanciaNm.ToString("0", pt)} NM, {alt.TempoMin!.Value.ToString("0", pt)} min);{c.AlternativaKg.ToString("0.00", pt)}");
+        else
+            sb.AppendLine($"Alternativa;{c.AlternativaKg.ToString("0.00", pt)}");
         sb.AppendLine($"Reserva;{c.ReservaKg.ToString("0.00", pt)}");
         sb.AppendLine($"TOTAL MÍNIMO A BORDO;{c.TotalKg.ToString("0.00", pt)}");
 

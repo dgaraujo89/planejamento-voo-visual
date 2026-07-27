@@ -36,7 +36,8 @@ public static class CalculadoraNavegacao
 
         var totais = CalcularTotais(pernas);
         var porFase = CalcularPorFase(pernas);
-        var combustivel = CalcularCombustivel(plano, totais.CombustivelKg);
+        var alternado = CalcularAlternado(plano);
+        var combustivel = CalcularCombustivel(plano, totais.CombustivelKg, alternado?.CombustivelKg ?? 0);
 
         double totalGeometrico = perfil.Segmentos.Sum(s => s.DistanciaNm);
         var toc = MontarPontoNotavel(perfil.Toc, PerfilVertical.RotuloToc, pernas, totalGeometrico, totais.TempoMin);
@@ -49,8 +50,40 @@ public static class CalculadoraNavegacao
             PorFase = porFase,
             Combustivel = combustivel,
             Toc = toc,
-            Tod = tod
+            Tod = tod,
+            Alternado = alternado
         };
+    }
+
+    /// <summary>
+    /// Perna destino → alternado, voada em cruzeiro (nivelada na altitude de cruzeiro)
+    /// com o vento e o consumo de cruzeiro do plano. Reaproveita <see cref="CalcularSegmento"/>.
+    /// Retorna <c>null</c> quando não há alternado (distância ≤ 0).
+    /// </summary>
+    private static ResultadoPerna? CalcularAlternado(PlanoDeVoo plano)
+    {
+        if (plano.AlternadoDistanciaNm <= 0) return null;
+
+        double nivel = plano.AltitudeCruzeiroFt;
+        var seg = new Segmento
+        {
+            De = plano.DestinoNome,
+            Para = plano.AlternadoNome,
+            Fase = Fase.Cruzeiro,
+            DistanciaNm = plano.AlternadoDistanciaNm,
+            CursoMag = plano.AlternadoCursoMag,
+            AltInicialFt = nivel,
+            AltFinalFt = nivel,
+            Origem = new Perna
+            {
+                Para = plano.AlternadoNome,
+                DistanciaNm = plano.AlternadoDistanciaNm,
+                CursoMag = plano.AlternadoCursoMag
+            }
+        };
+
+        // Ordem 0: a perna do alternado não faz parte da numeração da rota.
+        return CalcularSegmento(seg, plano, ordem: 0);
     }
 
     private static ResultadoPerna CalcularSegmento(Segmento seg, PlanoDeVoo plano, int ordem)
@@ -165,13 +198,14 @@ public static class CalculadoraNavegacao
         return lista;
     }
 
-    private static ResultadoCombustivel CalcularCombustivel(PlanoDeVoo plano, double combustivelRotaKg)
+    private static ResultadoCombustivel CalcularCombustivel(
+        PlanoDeVoo plano, double combustivelRotaKg, double alternativaKg)
     {
         var param = plano.Combustivel;
         double consumoCruzeiro = plano.PerfilDe(Fase.Cruzeiro)?.ConsumoKgH ?? 0;
 
         double contingencia = combustivelRotaKg * param.ContingenciaPercentual;
-        double alternativa = param.AlternativaMin / 60.0 * consumoCruzeiro;
+        double alternativa = alternativaKg;
         double reserva = param.ReservaMin / 60.0 * consumoCruzeiro;
         double total = param.PartidaTaxiKg + combustivelRotaKg + contingencia + alternativa + reserva;
         double autonomia = consumoCruzeiro > 0 ? (total - param.PartidaTaxiKg) / consumoCruzeiro : 0;
